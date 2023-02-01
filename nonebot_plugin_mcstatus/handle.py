@@ -80,7 +80,8 @@ class Handle:
                    address=args.address,
                    server_type=server_type,
                    online=True,
-                   players=players),
+                   players=players,
+                   retry=0),
             args.user_id,
             args.group_id,
         )

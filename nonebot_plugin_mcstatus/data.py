@@ -11,6 +11,7 @@ class Server(BaseModel):
     server_type: str
     online: bool
     players: int
+    retry: int
 
 
 ServerList = Dict[str, Dict[int, List[Server]]]

@@ -1,5 +1,5 @@
 from typing import cast
-
+import socket
 import nonebot
 from mcstatus import JavaServer, BedrockServer
 from nonebot import get_bots
@@ -40,23 +40,26 @@ async def _():
                         BedrockServer.lookup(server.address).status()
                     )
                     online = True
-                except Exception as e:
-                    print(e)
-                    status = None
-                    online = False
-
-                if online:
+                    retry = 0
                     players = (
                         status.players.online
                         if server.server_type == "JE" else
                         status.players_online
                     )
-                else:
-                    players = 0
+
+                except socket.timeout:
+                    retry = server.retry + 1
+                    if retry >= 3:
+                        online = False
+                        players = 0
+                    else:
+                        online = server.online
+                        players = server.players
 
                 if online != server.online or players != server.players:
                     server.online = online
                     server.players = players
+                    server.retry = retry
                     data.remove_server(
                         server.name,
                         user_id=id if type == "user" else None,
@@ -75,16 +78,11 @@ async def _():
                         + (query_players(server, status) if online else "")
                     )
                     for bot in bots:
-                        try:
-                            await bots[bot].send_msg(
-                                user_id=id if type == "user" else None,
-                                group_id=id if type == "group" else None,
-                                message=message,
-                            )
-                        except Exception as e:
-                            print(e)
-                            print(f"发送消息失败，bot: {bot}, id: {id}, type: {type}")
-                            print(f"message: {message}")
+                        await bots[bot].send_msg(
+                            user_id=id if type == "user" else None,
+                            group_id=id if type == "group" else None,
+                            message=message,
+                        )
 
 
 @mc.handle()
