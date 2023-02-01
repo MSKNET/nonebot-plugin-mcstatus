@@ -1,7 +1,7 @@
 from typing import cast
 
 import nonebot
-from mcstatus import JavaServer
+from mcstatus import JavaServer, BedrockServer
 from nonebot import get_bots
 from nonebot.adapters.onebot.v11 import (
     Bot,
@@ -12,15 +12,16 @@ from nonebot.adapters.onebot.v11 import (
 from nonebot.params import ShellCommandArgs
 from nonebot.plugin import on_shell_command, require
 
-from nonebot_plugin_mcstatus.data import Data, ServerList
-from nonebot_plugin_mcstatus.handle import Handle
-from nonebot_plugin_mcstatus.parser import ArgNamespace, mc_parser
+from .data import Data, ServerList
+from .handle import Handle, query_players
+from .parser import ArgNamespace, mc_parser
 
 require("nonebot_plugin_apscheduler")
 from nonebot_plugin_apscheduler import scheduler
 
 # 注册 shell_like 事件响应器
 mc = on_shell_command("mc", parser=mc_parser, priority=5)
+
 
 # 每分钟进行一次检测
 @scheduler.scheduled_job("cron", minute="*/5", id="mcstatus")
@@ -33,13 +34,29 @@ async def _():
         for id in server_list[type]:
             for server in server_list[type][id]:
                 try:
-                    ping = await JavaServer.lookup(server.address).async_ping()
-                    status = True
-                except:
-                    ping = None
-                    status = False
-                if status != server.status:
-                    server.status = status
+                    status = (
+                        JavaServer.lookup(server.address).status()
+                        if server.server_type == "JE" else
+                        BedrockServer.lookup(server.address).status()
+                    )
+                    online = True
+                except Exception as e:
+                    print(e)
+                    status = None
+                    online = False
+
+                if online:
+                    players = (
+                        status.players.online
+                        if server.server_type == "JE" else
+                        status.players_online
+                    )
+                else:
+                    players = 0
+
+                if online != server.online or players != server.players:
+                    server.online = online
+                    server.players = players
                     data.remove_server(
                         server.name,
                         user_id=id if type == "user" else None,
@@ -50,18 +67,24 @@ async def _():
                         user_id=id if type == "user" else None,
                         group_id=id if type == "group" else None,
                     )
+                    message = (
+                        "【服务器状态发生变化】\n"
+                        + f"{server.name} ({server.address})\n"
+                        + f"Online: {online}"
+                        + (f"\nPlayers: {players}" if online else "")
+                        + (query_players(server, status) if online else "")
+                    )
                     for bot in bots:
-                        await bots[bot].send_msg(
-                            user_id=id if type == "user" else None,
-                            group_id=id if type == "group" else None,
-                            message=(
-                                "【服务器状态发生变化】\n"
-                                + f"Name: {server.name}\n"
-                                + f"Address: {server.address}\n"
-                                + f"Status: {'On' if status else 'Off'}"
-                                + (f"\nPing: {ping}" if status else "")
-                            ),
-                        )
+                        try:
+                            await bots[bot].send_msg(
+                                user_id=id if type == "user" else None,
+                                group_id=id if type == "group" else None,
+                                message=message,
+                            )
+                        except Exception as e:
+                            print(e)
+                            print(f"发送消息失败，bot: {bot}, id: {id}, type: {type}")
+                            print(f"message: {message}")
 
 
 @mc.handle()

@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "nonebot-plugin-mcstatus"
-version = "0.1.7"
+version = "0.2.0"
 description = "Check Minecraft server status"
-authors = ["Jigsaw <j1g5aw@foxmail.com>"]
+authors = ["Jigsaw <j1g5aw@foxmail.com>", "Misaka13514 <Misaka13514@gmail.com>"]
 license = "MIT"
 readme = "README.md"
-homepage = "https://github.com/nonepkg/nonebot-plugin-mcstatus"
-repository = "https://github.com/nonepkg/nonebot-plugin-mcstatus"
+homepage = "https://github.com/MSKNET/nonebot-plugin-mcstatus"
+repository = "https://github.com/MSKNET/nonebot-plugin-mcstatus"
 
 [tool.poetry.dependencies]
 python = "^3.8"
@@ -16,7 +16,7 @@ nonebot-plugin-apscheduler = "^0.2.0"
 mcstatus = "^10.0.1"
 
 [tool.poetry.dev-dependencies]
-nb-cli = "^0.6.1"
+nb-cli = "^1.0.3"
 black = "^21.5b1"
 
 [build-system]

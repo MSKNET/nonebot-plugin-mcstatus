@@ -8,7 +8,9 @@ from pydantic import BaseModel
 class Server(BaseModel):
     name: str
     address: str
-    status: bool
+    server_type: str
+    online: bool
+    players: int
 
 
 ServerList = Dict[str, Dict[int, List[Server]]]
