@@ -34,20 +34,15 @@ async def _():
         for id in server_list[type]:
             for server in server_list[type][id]:
                 try:
-                    status = (
-                        JavaServer.lookup(server.address).status()
-                        if server.server_type == "JE" else
-                        BedrockServer.lookup(server.address).status()
-                    )
+                    status = (JavaServer.lookup(server.address).status()
+                              if server.server_type == "JE" else
+                              BedrockServer.lookup(server.address).status())
                     online = True
                     retry = 0
-                    players = (
-                        status.players.online
-                        if server.server_type == "JE" else
-                        status.players_online
-                    )
+                    players = (status.players.online if server.server_type
+                               == "JE" else status.players_online)
 
-                except socket.timeout:
+                except (socket.timeout, socket.gaierror):
                     retry = server.retry + 1
                     if retry >= 3:
                         online = False
@@ -71,12 +66,11 @@ async def _():
                         group_id=id if type == "group" else None,
                     )
                     message = (
-                        "【服务器状态发生变化】\n"
-                        + f"{server.name} ({server.address})\n"
-                        + f"Online: {online}"
-                        + (f"\nPlayers: {players}" if online else "")
-                        + (query_players(server, status) if online else "")
-                    )
+                        "【服务器状态发生变化】\n" +
+                        f"{server.name} ({server.address})\n" +
+                        f"Online: {online}" +
+                        (f"\nPlayers: {players}" if online else "") +
+                        (query_players(server, status) if online else ""))
                     for bot in bots:
                         await bots[bot].send_msg(
                             user_id=id if type == "user" else None,
@@ -86,14 +80,15 @@ async def _():
 
 
 @mc.handle()
-async def _(bot: Bot, event: MessageEvent, args: ArgNamespace = ShellCommandArgs()):
-    args.user_id = event.user_id if isinstance(event, PrivateMessageEvent) else None
-    args.group_id = event.group_id if isinstance(event, GroupMessageEvent) else None
-    args.is_admin = (
-        event.sender.role in ["admin", "owner"]
-        if isinstance(event, GroupMessageEvent)
-        else False
-    )
+async def _(bot: Bot,
+            event: MessageEvent,
+            args: ArgNamespace = ShellCommandArgs()):
+    args.user_id = event.user_id if isinstance(event,
+                                               PrivateMessageEvent) else None
+    args.group_id = event.group_id if isinstance(event,
+                                                 GroupMessageEvent) else None
+    args.is_admin = (event.sender.role in ["admin", "owner"] if isinstance(
+        event, GroupMessageEvent) else False)
     if hasattr(args, "handle"):
         result = await getattr(Handle, args.handle)(args)
         if result:

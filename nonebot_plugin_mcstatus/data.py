@@ -22,13 +22,16 @@ class Data:
     __server_list: ServerList = {"user": {}, "group": {}}
     __path: Path
 
-    def __init__(self, path: Path = Path() / "data" / "mcstatus" / "server_list.yml"):
+    def __init__(self,
+                 path: Path = Path() / "data" / "mcstatus" /
+                 "server_list.yml"):
         self.__path = path
         self.__load()
 
     def get_server_list(
-        self, user_id: Optional[int] = None, group_id: Optional[int] = None
-    ) -> Union[ServerList, List[Server]]:
+            self,
+            user_id: Optional[int] = None,
+            group_id: Optional[int] = None) -> Union[ServerList, List[Server]]:
 
         server_list = self.__server_list
 
@@ -49,7 +52,8 @@ class Data:
         user_id: Optional[int] = None,
         group_id: Optional[int] = None,
     ):
-        server_list = cast(List[Server], self.get_server_list(user_id, group_id))
+        server_list = cast(List[Server],
+                           self.get_server_list(user_id, group_id))
         if server not in server_list:
             server_list.append(server)
 
@@ -71,8 +75,7 @@ class Data:
             filter(
                 lambda server: server.name != name,
                 cast(List[Server], self.get_server_list(user_id, group_id)),
-            )
-        )
+            ))
 
         if user_id:
             if server_list:
@@ -89,7 +92,8 @@ class Data:
 
     def __load(self):
         try:
-            server_list = yaml.safe_load(self.__path.open("r", encoding="utf-8"))
+            server_list = yaml.safe_load(
+                self.__path.open("r", encoding="utf-8"))
             for type in server_list:
                 for id in server_list[type]:
                     self.__server_list[type][id] = [
