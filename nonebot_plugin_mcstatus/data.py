@@ -8,6 +8,7 @@ from pydantic import BaseModel
 class Server(BaseModel):
     name: str
     address: str
+    description: str
     server_type: str
     online: bool
     players: int

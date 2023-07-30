@@ -17,6 +17,9 @@ subparsers = mc_parser.add_subparsers(dest="handle")
 check = subparsers.add_parser("check", help="check server once")
 check.add_argument("name")
 
+checkapi = subparsers.add_parser("checkapi", help="check server once with api")
+checkapi.add_argument("name")
+
 add = subparsers.add_parser("add", help="add server")
 add.add_argument("name")
 add.add_argument("address")

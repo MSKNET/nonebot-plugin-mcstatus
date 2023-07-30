@@ -1,5 +1,6 @@
 import socket
 import re
+import requests
 from typing import List, cast
 
 from mcstatus import JavaServer, BedrockServer
@@ -110,20 +111,45 @@ class Handle:
     async def check(cls, args: Namespace) -> str:
         try:
             server_list = Data().get_server_list(args.user_id, args.group_id)
-            if args.name in (s.name for s in server_list):
-                server = next(s for s in server_list if s.name == args.name)
-                try:
-                    status = (
-                        JavaServer.lookup(server.address).status()
-                        if server.server_type == 'JE' else
-                        BedrockServer.lookup(server.address).status()
-                    )
-                except socket.timeout:
-                    return "获取服务器状态超时"
-                except Exception as e:
-                    return f"未知错误：{e}"
-                return put_status(server, status)
-            else:
+
+            if args.name not in (s.name for s in server_list):
                 return "没有找到对应该名称的已记录服务器"
+
+            server = next(s for s in server_list if s.name == args.name)
+            try:
+                status = (
+                    JavaServer.lookup(server.address).status()
+                    if server.server_type == 'JE' else
+                    BedrockServer.lookup(server.address).status()
+                )
+            except socket.timeout:
+                return "获取服务器状态超时"
+
+            return put_status(server, status)
+
+        except Exception as e:
+            return f"未知错误：{e}"
+
+    @classmethod
+    async def checkapi(cls, args: Namespace) -> str:
+        try:
+            server_list = Data().get_server_list(args.user_id, args.group_id)
+
+            if args.name not in (s.name for s in server_list):
+                return "没有找到对应该名称的已记录服务器"
+
+            server = next(s for s in server_list if s.name == args.name)
+            api_url = "https://api.mcsrvstat.us/2/" if server.server_type == 'JE' else "https://api.mcsrvstat.us/bedrock/2/"
+            resp = requests.get(api_url + server.address)
+            if resp.status_code != 200:
+                return f"{server.address} ({server.description}) 获取信息失败（{resp.status_code}）。"
+            json_data = resp.json()
+            if not json_data["online"]:
+                return f"{server.address} ({server.description}) 当前不在线。"
+            elif json_data['players']['online'] == 0:
+                return f"{server.address} ({server.description}) 当前没有玩家在线。"
+            else:
+                return f"{server.address} ({server.description}) 在线玩家： {', '.join(json_data['players']['list'])}。"
+
         except Exception as e:
             return f"未知错误：{e}"
